@@ -3647,6 +3647,21 @@ KMP_EXPORT void KMPC_FOR_STATIC_INIT(ident_t *loc, kmp_int32 global_tid,
 
 KMP_EXPORT void __kmpc_for_static_fini(ident_t *loc, kmp_int32 global_tid);
 
+// Taken from: https://github.com/LangdalP/llvm-openmp-extended
+KMP_EXPORT kmp_int32 __kmpc_should_callback_per_chunk(ident_t *);
+KMP_EXPORT void __kmpc_for_static_chunk_4(ident_t *loc, kmp_int32 global_tid,
+                                          kmp_int32 last, kmp_int32 lower,
+                                          kmp_int32 upper);
+KMP_EXPORT void __kmpc_for_static_chunk_4u(ident_t *loc, kmp_int32 global_tid,
+                                           kmp_int32 last, kmp_uint32 lower,
+                                           kmp_uint32 upper);
+KMP_EXPORT void __kmpc_for_static_chunk_8(ident_t *loc, kmp_int32 global_tid,
+                                          kmp_int32 last, kmp_int64 lower,
+                                          kmp_int64 upper);
+KMP_EXPORT void __kmpc_for_static_chunk_8u(ident_t *loc, kmp_int32 global_tid,
+                                           kmp_int32 last, kmp_uint64 lower,
+                                           kmp_uint64 upper);
+
 KMP_EXPORT void __kmpc_copyprivate(ident_t *loc, kmp_int32 global_tid,
                                    size_t cpy_size, void *cpy_data,
                                    void (*cpy_func)(void *, void *),

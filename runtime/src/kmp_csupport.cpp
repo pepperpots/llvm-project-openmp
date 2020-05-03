@@ -1817,7 +1817,7 @@ void __kmpc_for_static_fini(ident_t *loc, kmp_int32 global_tid) {
   KE_TRACE(10, ("__kmpc_for_static_fini called T#%d\n", global_tid));
 
 #if OMPT_SUPPORT && OMPT_OPTIONAL
-  if (ompt_enabled.ompt_callback_work) {
+  if (ompt_enabled.ompt_callback_work || ompt_enabled.ompt_callback_loop_end) {
     ompt_work_t ompt_work_type = ompt_work_loop;
     ompt_team_info_t *team_info = __ompt_get_teaminfo(0, NULL);
     ompt_task_info_t *task_info = __ompt_get_task_info_object(0);
@@ -1835,9 +1835,15 @@ void __kmpc_for_static_fini(ident_t *loc, kmp_int32 global_tid) {
       }
       KMP_DEBUG_ASSERT(ompt_work_type);
     }
-    ompt_callbacks.ompt_callback(ompt_callback_work)(
-        ompt_work_type, ompt_scope_end, &(team_info->parallel_data),
-        &(task_info->task_data), 0, OMPT_GET_RETURN_ADDRESS(0));
+
+    if((ompt_work_type != ompt_work_loop) && ompt_enabled.ompt_callback_work) {
+      ompt_callbacks.ompt_callback(ompt_callback_work)(
+          ompt_work_type, ompt_scope_end, &(team_info->parallel_data),
+          &(task_info->task_data), 0, OMPT_GET_RETURN_ADDRESS(0));
+    } else if ((ompt_work_type == ompt_work_loop) && ompt_enabled.ompt_callback_loop_end) {
+      ompt_callbacks.ompt_callback(ompt_callback_loop_end)(
+          &(team_info->parallel_data), &(task_info->task_data));
+    }
   }
 #endif
   if (__kmp_env_consistency_check)

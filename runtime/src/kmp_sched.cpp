@@ -94,7 +94,7 @@ static void __kmp_for_static_init(ident_t *loc, kmp_int32 global_tid,
 
   static kmp_int8 warn = 0;
 
-  if (ompt_enabled.ompt_callback_work) {
+  if (ompt_enabled.ompt_callback_work || ompt_enabled.ompt_callback_loop_begin) {
     // Only fully initialize variables needed by OMPT if OMPT is enabled.
     team_info = __ompt_get_teaminfo(0, NULL);
     task_info = __ompt_get_task_info_object(0);
@@ -168,10 +168,16 @@ static void __kmp_for_static_init(ident_t *loc, kmp_int32 global_tid,
     KE_TRACE(10, ("__kmpc_for_static_init: T#%d return\n", global_tid));
 
 #if OMPT_SUPPORT && OMPT_OPTIONAL
-    if (ompt_enabled.ompt_callback_work) {
+    if ((ompt_work_type != ompt_work_loop) && ompt_enabled.ompt_callback_work) {
       ompt_callbacks.ompt_callback(ompt_callback_work)(
           ompt_work_type, ompt_scope_begin, &(team_info->parallel_data),
           &(task_info->task_data), 0, codeptr);
+    }
+
+    if ((ompt_work_type == ompt_work_loop) && ompt_enabled.ompt_callback_loop_begin) {
+      ompt_callbacks.ompt_callback(ompt_callback_loop_begin)(
+          &(team_info->parallel_data), &(task_info->task_data), schedtype,
+          *plower, *pupper, *pstride, team->t.t_nproc, codeptr);
     }
 #endif
     KMP_STATS_LOOP_END(OMP_loop_static_iterations);
@@ -217,10 +223,16 @@ static void __kmp_for_static_init(ident_t *loc, kmp_int32 global_tid,
     KE_TRACE(10, ("__kmpc_for_static_init: T#%d return\n", global_tid));
 
 #if OMPT_SUPPORT && OMPT_OPTIONAL
-    if (ompt_enabled.ompt_callback_work) {
+    if ((ompt_work_type != ompt_work_loop) && ompt_enabled.ompt_callback_work) {
       ompt_callbacks.ompt_callback(ompt_callback_work)(
           ompt_work_type, ompt_scope_begin, &(team_info->parallel_data),
           &(task_info->task_data), *pstride, codeptr);
+    }
+
+    if ((ompt_work_type == ompt_work_loop) && ompt_enabled.ompt_callback_loop_begin) {
+      ompt_callbacks.ompt_callback(ompt_callback_loop_begin)(
+          &(team_info->parallel_data), &(task_info->task_data), schedtype,
+          *plower, *pupper, *pstride, team->t.t_nproc, codeptr);
     }
 #endif
     KMP_STATS_LOOP_END(OMP_loop_static_iterations);
@@ -247,10 +259,16 @@ static void __kmp_for_static_init(ident_t *loc, kmp_int32 global_tid,
     KE_TRACE(10, ("__kmpc_for_static_init: T#%d return\n", global_tid));
 
 #if OMPT_SUPPORT && OMPT_OPTIONAL
-    if (ompt_enabled.ompt_callback_work) {
+    if ((ompt_work_type != ompt_work_loop) && ompt_enabled.ompt_callback_work) {
       ompt_callbacks.ompt_callback(ompt_callback_work)(
           ompt_work_type, ompt_scope_begin, &(team_info->parallel_data),
           &(task_info->task_data), *pstride, codeptr);
+    }
+
+    if ((ompt_work_type == ompt_work_loop) && ompt_enabled.ompt_callback_loop_begin) {
+      ompt_callbacks.ompt_callback(ompt_callback_loop_begin)(
+          &(team_info->parallel_data), &(task_info->task_data), schedtype,
+          *plower, *pupper, *pstride, team->t.t_nproc, codeptr);
     }
 #endif
     KMP_STATS_LOOP_END(OMP_loop_static_iterations);
@@ -405,10 +423,16 @@ static void __kmp_for_static_init(ident_t *loc, kmp_int32 global_tid,
   KE_TRACE(10, ("__kmpc_for_static_init: T#%d return\n", global_tid));
 
 #if OMPT_SUPPORT && OMPT_OPTIONAL
-  if (ompt_enabled.ompt_callback_work) {
+  if ((ompt_work_type != ompt_work_loop) && ompt_enabled.ompt_callback_work) {
     ompt_callbacks.ompt_callback(ompt_callback_work)(
         ompt_work_type, ompt_scope_begin, &(team_info->parallel_data),
         &(task_info->task_data), trip_count, codeptr);
+  }
+
+  if ((ompt_work_type == ompt_work_loop) && ompt_enabled.ompt_callback_loop_begin) {
+    ompt_callbacks.ompt_callback(ompt_callback_loop_begin)(
+        &(team_info->parallel_data), &(task_info->task_data), schedtype,
+        *plower, *pupper, *pstride, team->t.t_nproc, codeptr);
   }
 #endif
 
@@ -768,6 +792,33 @@ static void __kmp_team_static_init(ident_t *loc, kmp_int32 gtid,
 #endif
 }
 
+/*
+ * Taken from: https://github.com/LangdalP/llvm-openmp-extended
+ * Template for __kmpc_for_static_chunk_4 and so on.
+ * Used to notify tools about new chunks.
+ */
+template< typename T >
+static void
+__kmp_for_static_chunk(
+    ident_t                          *loc,
+    kmp_int32                         global_tid,
+    kmp_int32                         last,
+    T                                 lower,
+    T                                 upper
+) {
+#if OMPT_SUPPORT && OMPT_OPTIONAL
+ if (ompt_enabled.ompt_callback_loop_chunk || ompt_enabled.ompt_callback_loop_chunk) {
+        ompt_team_info_t* team_info = __ompt_get_teaminfo(0, NULL);
+        ompt_task_info_t *task_info = __ompt_get_task_info_object(0);
+        ompt_callbacks.ompt_callback(ompt_callback_loop_chunk)(
+                &(team_info->parallel_data),
+                &(task_info->task_data),
+                (int64_t)lower,
+                (int64_t)upper);
+    }
+#endif
+}
+
 //------------------------------------------------------------------------------
 extern "C" {
 /*!
@@ -856,6 +907,48 @@ void __kmpc_for_static_init_8u(ident_t *loc, kmp_int32 gtid,
 /*!
 @}
 */
+
+// Taken from: https://github.com/LangdalP/llvm-openmp-extended
+
+kmp_int32
+__kmpc_should_callback_per_chunk( ident_t *loc )
+{
+#if OMPT_SUPPORT && OMPT_OPTIONAL
+    if (ompt_enabled &&
+        ompt_callbacks.ompt_callback(ext_callback_chunk)) {
+        return 1;
+    }
+#endif
+    return 0;
+}
+
+void
+__kmpc_for_static_chunk_4( ident_t *loc, kmp_int32 global_tid, kmp_int32 last,
+                                   kmp_int32 lower, kmp_int32 upper)
+{
+    __kmp_for_static_chunk< kmp_int32 >(loc, global_tid, last, lower, upper);
+}
+
+void
+__kmpc_for_static_chunk_4u( ident_t *loc, kmp_int32 global_tid, kmp_int32 last,
+                            kmp_uint32 lower, kmp_uint32 upper)
+{
+    __kmp_for_static_chunk< kmp_uint32 >(loc, global_tid, last, lower, upper);
+}
+
+void
+__kmpc_for_static_chunk_8( ident_t *loc, kmp_int32 global_tid, kmp_int32 last,
+                           kmp_int64 lower, kmp_int64 upper)
+{
+    __kmp_for_static_chunk< kmp_int64 >(loc, global_tid, last, lower, upper);
+}
+
+void
+__kmpc_for_static_chunk_8u( ident_t *loc, kmp_int32 global_tid, kmp_int32 last,
+                            kmp_uint64 lower, kmp_uint64 upper)
+{
+    __kmp_for_static_chunk< kmp_uint64 >(loc, global_tid, last, lower, upper);
+}
 
 /*!
 @ingroup WORK_SHARING

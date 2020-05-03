@@ -103,4 +103,10 @@
 
 #define ompt_callback_dispatch_implemented ompt_event_UNIMPLEMENTED
 
+#define ompt_callback_loop_begin_implemented ompt_event_MAY_ALWAYS_OPTIONAL
+
+#define ompt_callback_loop_end_implemented ompt_event_MAY_ALWAYS_OPTIONAL
+
+#define ompt_callback_loop_chunk_implemented ompt_event_MAY_ALWAYS_OPTIONAL
+
 #endif

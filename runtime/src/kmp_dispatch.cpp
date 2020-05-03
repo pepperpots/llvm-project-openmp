@@ -977,12 +977,12 @@ __kmp_dispatch_init(ident_t *loc, int gtid, enum sched_type schedule, T lb,
 #endif // ( KMP_STATIC_STEAL_ENABLED )
 
 #if OMPT_SUPPORT && OMPT_OPTIONAL
-  if (ompt_enabled.ompt_callback_work) {
+  if (ompt_enabled.ompt_callback_loop_begin) {
     ompt_team_info_t *team_info = __ompt_get_teaminfo(0, NULL);
     ompt_task_info_t *task_info = __ompt_get_task_info_object(0);
-    ompt_callbacks.ompt_callback(ompt_callback_work)(
-        ompt_work_loop, ompt_scope_begin, &(team_info->parallel_data),
-        &(task_info->task_data), pr->u.p.tc, OMPT_LOAD_RETURN_ADDRESS(gtid));
+    ompt_callbacks.ompt_callback(ompt_callback_loop_begin)(
+        &(team_info->parallel_data), &(task_info->task_data), schedule, lb, ub,
+        st, (T)th->th.th_team_nproc, OMPT_LOAD_RETURN_ADDRESS(gtid));
   }
 #endif
   KMP_PUSH_PARTITIONED_TIMER(OMP_loop_dynamic);
@@ -1830,17 +1830,26 @@ int __kmp_dispatch_next_algorithm(int gtid,
 /* Define a macro for exiting __kmp_dispatch_next(). If status is 0 (no more
    work), then tell OMPT the loop is over. In some cases kmp_dispatch_fini()
    is not called. */
+/* TODO: Not a loop end any more, since it is a good place to call chunk
+   callback as well. */
 #if OMPT_SUPPORT && OMPT_OPTIONAL
 #define OMPT_LOOP_END                                                          \
   if (status == 0) {                                                           \
-    if (ompt_enabled.ompt_callback_work) {                                     \
+    if (ompt_enabled.ompt_callback_loop_end) {                                 \
       ompt_team_info_t *team_info = __ompt_get_teaminfo(0, NULL);              \
       ompt_task_info_t *task_info = __ompt_get_task_info_object(0);            \
-      ompt_callbacks.ompt_callback(ompt_callback_work)(                        \
-          ompt_work_loop, ompt_scope_end, &(team_info->parallel_data),         \
-          &(task_info->task_data), 0, codeptr);                                \
+      ompt_callbacks.ompt_callback(ompt_callback_loop_end)(                    \
+          &(team_info->parallel_data), &(task_info->task_data));               \
     }                                                                          \
-  }
+  } else {                                                                     \
+    if (ompt_enabled.ompt_callback_loop_chunk) {                               \
+      ompt_team_info_t *team_info = __ompt_get_teaminfo(0, NULL);              \
+      ompt_task_info_t *task_info = __ompt_get_task_info_object(0);            \
+      ompt_callbacks.ompt_callback(ompt_callback_loop_chunk)(                  \
+          &(team_info->parallel_data), &(task_info->task_data),                \
+          *p_lb, *p_ub);                                                       \
+    }                                                                          \
+  }                                                                            \
 // TODO: implement count
 #else
 #define OMPT_LOOP_END // no-op

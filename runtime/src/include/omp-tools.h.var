@@ -153,7 +153,13 @@
                                                                                                                          \
     macro (ompt_callback_reduction,         ompt_callback_sync_region_t,       31) /* reduction                       */ \
                                                                                                                          \
-    macro (ompt_callback_dispatch,          ompt_callback_dispatch_t,          32) /* dispatch of work                */
+    macro (ompt_callback_dispatch,          ompt_callback_dispatch_t,          32) /* dispatch of work                */ \
+                                                                                                                         \
+    macro (ompt_callback_loop_begin,        ompt_callback_loop_begin_t,        33) /* beginning of the loop           */ \
+                                                                                                                         \
+    macro (ompt_callback_loop_end,          ompt_callback_loop_end_t,          34) /* end of the loop                 */ \
+                                                                                                                         \
+    macro (ompt_callback_loop_chunk,        ompt_callback_loop_chunk_t,        35) /* chunk of the loop               */
 
 /*****************************************************************************
  * implementation specific types
@@ -201,7 +207,10 @@ typedef enum ompt_callbacks_t {
   ompt_callback_flush                    = 29,
   ompt_callback_cancel                   = 30,
   ompt_callback_reduction                = 31,
-  ompt_callback_dispatch                 = 32
+  ompt_callback_dispatch                 = 32,
+  ompt_callback_loop_begin               = 33,
+  ompt_callback_loop_end                 = 34,
+  ompt_callback_loop_chunk               = 35
 } ompt_callbacks_t;
 
 typedef enum ompt_record_t {
@@ -729,6 +738,29 @@ typedef struct ompt_record_dispatch_t {
   ompt_dispatch_t kind;
   ompt_data_t instance;
 } ompt_record_dispatch_t;
+
+typedef void (*ompt_callback_loop_begin_t) (
+  ompt_data_t* parallel_data,
+  ompt_data_t* task_data,
+  int flags,
+  int64_t lower_bound,
+  int64_t upper_bound,
+  int64_t increment,
+  int num_workers,
+  void* codeptr_ra
+);
+
+typedef void (*ompt_callback_loop_end_t) (
+  ompt_data_t* parallel_data,
+  ompt_data_t* task_data
+);
+
+typedef void (*ompt_callback_loop_chunk_t) (
+  ompt_data_t* parallel_data,
+  ompt_data_t* task_data,
+  int64_t lower_bound,
+  int64_t upper_bound
+);
 
 typedef void (*ompt_callback_task_create_t) (
   ompt_data_t *encountering_task_data,
