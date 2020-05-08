@@ -807,7 +807,7 @@ __kmp_for_static_chunk(
     T                                 upper
 ) {
 #if OMPT_SUPPORT && OMPT_OPTIONAL
- if (ompt_enabled.ompt_callback_loop_chunk || ompt_enabled.ompt_callback_loop_chunk) {
+ if (ompt_enabled.ompt_callback_loop_chunk) {
         ompt_team_info_t* team_info = __ompt_get_teaminfo(0, NULL);
         ompt_task_info_t *task_info = __ompt_get_task_info_object(0);
         ompt_callbacks.ompt_callback(ompt_callback_loop_chunk)(
@@ -914,8 +914,7 @@ kmp_int32
 __kmpc_should_callback_per_chunk( ident_t *loc )
 {
 #if OMPT_SUPPORT && OMPT_OPTIONAL
-    if (ompt_enabled &&
-        ompt_callbacks.ompt_callback(ext_callback_chunk)) {
+    if (ompt_enabled.ompt_callback_loop_chunk) {
         return 1;
     }
 #endif
