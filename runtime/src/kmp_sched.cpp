@@ -792,8 +792,10 @@ static void __kmp_team_static_init(ident_t *loc, kmp_int32 gtid,
 #endif
 }
 
+
+// Code copied from: from: https://github.com/LangdalP/llvm-openmp-extended
+// License: https://github.com/LangdalP/llvm-openmp-extended/blob/master/LICENSE.txt
 /*
- * Taken from: https://github.com/LangdalP/llvm-openmp-extended
  * Template for __kmpc_for_static_chunk_4 and so on.
  * Used to notify tools about new chunks.
  */
@@ -818,6 +820,7 @@ __kmp_for_static_chunk(
     }
 #endif
 }
+// End of copied code
 
 //------------------------------------------------------------------------------
 extern "C" {
@@ -908,8 +911,8 @@ void __kmpc_for_static_init_8u(ident_t *loc, kmp_int32 gtid,
 @}
 */
 
-// Taken from: https://github.com/LangdalP/llvm-openmp-extended
-
+// Code copied from: https://github.com/LangdalP/llvm-openmp-extended
+// License: https://github.com/LangdalP/llvm-openmp-extended/blob/master/LICENSE.txt
 kmp_int32
 __kmpc_should_callback_per_chunk( ident_t *loc )
 {
@@ -948,6 +951,7 @@ __kmpc_for_static_chunk_8u( ident_t *loc, kmp_int32 global_tid, kmp_int32 last,
 {
     __kmp_for_static_chunk< kmp_uint64 >(loc, global_tid, last, lower, upper);
 }
+// End of copied code
 
 /*!
 @ingroup WORK_SHARING
